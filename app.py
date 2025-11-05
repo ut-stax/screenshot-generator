@@ -4,22 +4,29 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 
+# Load environment variables
 load_dotenv()
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static", template_folder="templates")
 
 API_KEY = os.getenv("SCREENSHOTBASE_API_KEY")
 API_URL = "https://api.screenshotbase.com/v1/take"
 
-os.makedirs("static/screenshots", exist_ok=True)
+# Ensure the screenshots directory exists
+os.makedirs(os.path.join("static", "screenshots"), exist_ok=True)
 
-@app.route('/', methods=['GET', 'POST'])
+
+@app.route("/", methods=["GET", "POST"])
 def home():
     screenshot_path = None
     error = None
 
-    if request.method == 'POST':
-        url = request.form.get('url')
+    if request.method == "POST":
+        url = request.form.get("url")
+
+        if not url:
+            error = "⚠️ Please enter a valid website URL."
+            return render_template("index.html", screenshot=None, error=error)
 
         if not url.startswith("http"):
             url = "https://" + url
@@ -29,6 +36,7 @@ def home():
             "full_page": 1,
             "format": "png"
         }
+
         headers = {"apikey": API_KEY}
 
         try:
@@ -36,8 +44,10 @@ def home():
             response.raise_for_status()
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            file_path = os.path.join("static", "screenshots", f"screenshot_{timestamp}.png")
+            file_name = f"screenshot_{timestamp}.png"
+            file_path = os.path.join("static", "screenshots", file_name)
 
+            # Save screenshot
             with open(file_path, "wb") as f:
                 f.write(response.content)
 
@@ -53,5 +63,9 @@ def home():
 
     return render_template("index.html", screenshot=screenshot_path, error=error)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+
+# --- Production entry point ---
+if __name__ == "__main__":
+    # Use port provided by Railway
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
