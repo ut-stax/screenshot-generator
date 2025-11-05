@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Website Screenshot Generator</title>
+
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='image.png') }}">
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Lucide icons -->
+  <script src="https://unpkg.com/lucide@0.275.0/dist/lucide.min.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+
+  <meta name="theme-color" content="#ffffff">
+</head>
+<body>
+  <header class="navbar navbar-expand-lg sticky-top glass-navbar">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+        <span class="logo-circle">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="6" width="18" height="14" rx="2" />
+            <circle cx="12" cy="13" r="3" />
+            <path d="M8 6l1.5-2h5L16 6" />
+          </svg>
+        </span>
+        <div class="brand-text">
+          <div class="app-title">Website Screenshot Generator</div>
+          <small class="text-muted tagline">Capture any website instantly</small>
+        </div>
+      </a>
+
+      <div class="ms-auto d-none d-md-flex align-items-center">
+        <small class="text-muted me-3">Built with ❤️ Flask</small>
+      </div>
+    </div>
+  </header>
+
+  <main class="py-5">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-9 col-md-10">
+          <div class="card main-card p-4 shadow-sm">
+            <form id="captureForm" method="POST" novalidate>
+              <div class="d-flex flex-column gap-3">
+                <div class="input-row d-flex gap-2 align-items-center">
+                  <div class="input-with-icon flex-grow-1">
+                    <label class="form-label visually-hidden" for="urlInput">Website URL</label>
+                    <div class="input-group">
+                      <span class="input-group-text icon-prefix" id="url-addon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3H5a2 2 0 0 0-2 2v5"/><path d="M14 21h5a2 2 0 0 0 2-2v-5"/><path d="M21 8L12 17"/><path d="M3 16L12 7"/></svg>
+                      </span>
+                      <input
+                        id="urlInput"
+                        name="url"
+                        type="url"
+                        pattern="https?://.+"
+                        class="form-control form-control-lg"
+                        placeholder="Enter website URL (e.g., https://example.com)"
+                        aria-describedby="url-addon"
+                        value="{{ request.form.url or '' }}"
+                        autofocus
+                        required
+                      />
+                    </div>
+                    <div class="invalid-feedback mt-1" id="urlFeedback">Please enter a valid URL (include https://).</div>
+                  </div>
+
+                  <button id="captureBtn" type="submit" class="btn btn-primary btn-lg d-flex align-items-center gap-2">
+                    <span id="btnIcon" class="btn-icon">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    </span>
+                    <span id="btnText">Capture Screenshot</span>
+                    <span id="btnSpinner" class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display:none;"></span>
+                  </button>
+                </div>
+
+                <div class="advanced-card p-3 rounded-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong>Advanced Options</strong>
+                    <small class="text-muted">Customize output</small>
+                  </div>
+
+                  <div class="row g-3">
+                    <div class="col-md-4 d-flex align-items-center">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="1" id="fullPage" name="full_page" {{ 'checked' if request.form.get('full_page') else '' }}>
+                        <label class="form-check-label" for="fullPage">Capture Full Page</label>
+                      </div>
+                    </div>
+
+                    <div class="col-md-4">
+                      <label class="form-label small mb-1" for="formatSelect">Format</label>
+                      <select id="formatSelect" name="format" class="form-select form-select-sm">
+                        {% set fmt = request.form.get('format','png') %}
+                        <option value="png" {{ 'selected' if fmt=='png' else '' }}>PNG</option>
+                        <option value="jpg" {{ 'selected' if fmt=='jpg' else '' }}>JPG</option>
+                        <option value="gif" {{ 'selected' if fmt=='gif' else '' }}>GIF</option>
+                        <option value="webp" {{ 'selected' if fmt=='webp' else '' }}>WEBP</option>
+                      </select>
+                    </div>
+
+                    <div class="col-md-4"></div>
+
+                    <div class="col-md-6">
+                      <label class="form-label small mb-1" for="vw">Viewport Width</label>
+                      <input id="vw" name="viewport_width" type="number" min="320" step="1" class="form-control form-control-sm" value="{{ request.form.get('viewport_width','1280') }}">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small mb-1" for="vh">Viewport Height</label>
+                      <input id="vh" name="viewport_height" type="number" min="320" step="1" class="form-control form-control-sm" value="{{ request.form.get('viewport_height','720') }}">
+                    </div>
+                  </div>
+                </div>
+
+                {% if error %}
+                  <div class="alert alert-danger mb-0" role="alert">
+                    <strong>Oops!</strong> {{ error }}
+                  </div>
+                {% endif %}
+              </div>
+            </form>
+          </div>
+
+          <div class="mt-4">
+            <div class="card preview-card shadow-sm">
+              <div class="card-body p-3 position-relative">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h6 class="mb-0">Screenshot Preview</h6>
+                  <small class="text-muted">Rendered image from ScreenshotBase</small>
+                </div>
+
+                {% if screenshot %}
+                  <div class="preview-wrapper position-relative">
+                    <div class="preview-toolbar">
+                      <a href="{{ url_for('static', filename=screenshot.split('static/')[1]) if screenshot.startswith('static/') else screenshot }}" download class="btn btn-sm btn-outline-primary me-1" id="downloadBtn">
+                        <i data-lucide="download" style="vertical-align:middle"></i> Download
+                      </a>
+                      <a href="{{ screenshot }}" target="_blank" class="btn btn-sm btn-outline-secondary me-1" id="openBtn">
+                        <i data-lucide="external-link" style="vertical-align:middle"></i> Open
+                      </a>
+                      <button id="retakeBtn" class="btn btn-sm btn-outline-danger" title="Retake (clear preview)"><i data-lucide="refresh-ccw" style="vertical-align:middle"></i> Retake</button>
+                    </div>
+
+                    <div class="img-container">
+                      <img id="previewImage" src="{{ url_for('static', filename=screenshot.split('static/')[1]) if screenshot.startswith('static/') else screenshot }}" alt="Screenshot Preview" class="img-fluid rounded">
+                    </div>
+                  </div>
+                {% else %}
+                  <div class="placeholder py-5 text-center text-muted">
+                    <i data-lucide="image" class="mb-2" width="48" height="48"></i>
+                    <div class="mt-2">No screenshot yet. Enter a URL and click <strong>Capture Screenshot</strong>.</div>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <footer class="mt-3 text-center text-muted small">
+              <div>Powered by <strong>ScreenshotBase API</strong> • Built with ❤️ by ut-stax</div>
+            </footer>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script>
+    // Initialize lucide icons
+    document.addEventListener("DOMContentLoaded", function () {
+      if (window.lucide) lucide.replace();
+    });
+  </script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
