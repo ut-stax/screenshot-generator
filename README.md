@@ -2,12 +2,6 @@
 
 A Flask-based web application that captures screenshots of websites using the ScreenshotBase API. Built with modern UI components and responsive design. 🚀
 
-## 🌐 Live Demo
-
-Try the live version: [https://screenshot-generator-production.up.railway.app/](https://screenshot-generator-production.up.railway.app/)
-
-## 🖼️ Screenshot
-
 ![Project Screenshot](image.png)
 
 ## ✨ Features
